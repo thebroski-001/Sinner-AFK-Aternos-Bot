@@ -35,167 +35,215 @@ app.get('/', (req, res) => {
         <title>${config.name} Dashboard</title>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <link rel="stylesheet" media="print" onload="this.media='all'"
-              href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
         <style>
           *, *::before, *::after { box-sizing: border-box; }
 
+          :root {
+            color-scheme: light;
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: #f3f7f1;
+            color: #193326;
+            font-synthesis: none;
+            text-rendering: optimizeLegibility;
+          }
+
           body {
-            font-family: 'Inter', -apple-system, sans-serif;
-            background: #0d1117;
-            color: #e6edf3;
+            margin: 0;
+            min-width: 320px;
+            min-height: 100vh;
+            padding: 48px 24px;
+            background:
+              radial-gradient(ellipse at 8% 0%, rgba(207, 231, 203, .55), transparent 36rem),
+              #f3f7f1;
+          }
+
+          button, a { font: inherit; }
+          .dashboard { width: min(100%, 760px); margin: 0 auto; }
+          .dashboard-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 20px;
+            margin-bottom: 28px;
+          }
+          .eyebrow {
+            margin: 0 0 8px;
+            color: #668071;
+            font-size: 11px;
+            font-weight: 750;
+            letter-spacing: .14em;
+            text-transform: uppercase;
+          }
+          h1 { margin: 0; color: #193326; font-size: clamp(27px, 5vw, 36px); line-height: 1.12; letter-spacing: -.04em; }
+          .subtitle { margin: 9px 0 0; color: #708276; font-size: 14px; line-height: 1.5; }
+          .live-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            flex: 0 0 auto;
+            margin-top: 8px;
+            padding: 9px 13px;
+            border: 1px solid #d8e5d8;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, .75);
+            color: #68796d;
+            font-size: 12px;
+            font-weight: 700;
+          }
+          .live-badge::before { width: 8px; height: 8px; border-radius: 50%; background: #a1afa3; content: ""; }
+          .live-badge.online { border-color: #bce2c2; background: #edf8ee; color: #24713b; }
+          .live-badge.online::before { background: #35a853; box-shadow: 0 0 0 3px #d6efda; }
+          .live-badge.offline { border-color: #f0ceca; background: #fff4f2; color: #a4433b; }
+          .live-badge.offline::before { background: #d95d51; box-shadow: 0 0 0 3px #fce0dc; }
+
+          .status-card {
+            display: flex;
+            align-items: center;
+            gap: 17px;
+            min-height: 126px;
+            padding: 25px 28px;
+            border: 1px solid #dce8dc;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, .88);
+            box-shadow: 0 14px 34px rgba(38, 77, 48, .06);
+            transition: border-color .2s ease, background .2s ease;
+          }
+          .status-card.online { border-color: #c4e5c9; background: linear-gradient(110deg, #f6fcf5, #fff 65%); }
+          .status-card.offline { border-color: #edd6d2; }
+          .status-icon {
+            display: grid;
+            width: 54px;
+            height: 54px;
+            flex: 0 0 auto;
+            place-items: center;
+            border-radius: 17px;
+            background: #eef2ed;
+            color: #78887b;
+            font-size: 25px;
+            font-weight: 700;
+          }
+          .status-icon.online { background: #e1f4e4; color: #278344; }
+          .status-icon.offline { background: #fff0ed; color: #c14f45; }
+          .status-label { margin: 0; color: #233c2d; font-size: 21px; font-weight: 750; letter-spacing: -.02em; }
+          .status-detail { margin: 5px 0 0; color: #718176; font-size: 13px; }
+
+          .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 13px;
+            margin: 16px 0;
+          }
+          .stat-card {
+            min-width: 0;
+            padding: 19px 20px;
+            border: 1px solid #e0e9df;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, .82);
+          }
+          .stat-label { margin: 0 0 11px; color: #748579; font-size: 12px; font-weight: 650; }
+          .stat-value { margin: 0; overflow-wrap: anywhere; color: #203a2b; font-size: clamp(17px, 2.6vw, 21px); font-weight: 720; line-height: 1.3; letter-spacing: -.025em; }
+          #coords-text { font-variant-numeric: tabular-nums; }
+          .stat-detail { margin: 6px 0 0; color: #93a095; font-size: 11px; line-height: 1.45; }
+
+          .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 21px;
+          }
+          .btn-primary {
+            min-height: 54px;
+            border: 1px solid transparent;
+            border-radius: 13px;
+            color: white;
+            font-size: 14px;
+            font-weight: 750;
+            cursor: pointer;
+            transition: transform .15s ease, box-shadow .15s ease, opacity .15s ease;
+          }
+          .btn-primary:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 7px 16px rgba(24, 54, 34, .13); }
+          .btn-primary:active:not(:disabled) { transform: translateY(0); }
+          .btn-primary:focus-visible, .text-link:focus-visible { outline: 3px solid #80bd8d; outline-offset: 3px; }
+          .btn-primary:disabled { cursor: wait; opacity: .62; }
+          .btn-start { background: #2d914d; }
+          .btn-stop { background: #cf5146; }
+          .action-feedback { grid-column: 1 / -1; min-height: 18px; margin: 0; color: #688071; text-align: center; font-size: 12px; }
+          .action-feedback.error { color: #b4453d; }
+          .page-footer {
             display: flex;
             justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 24px;
+            gap: 19px;
+            margin-top: 12px;
           }
+          .text-link { color: #688071; font-size: 12px; font-weight: 650; text-decoration: none; }
+          .text-link:hover { color: #287544; text-decoration: underline; }
+          .refresh-note { margin: 20px 0 0; color: #9aa79b; font-size: 11px; text-align: center; }
 
-          main { width: 100%; max-width: 400px; }
-
-          header { margin-bottom: 28px; }
-          header h1 {
-            font-size: 26px;
-            font-weight: 700;
-            color: #f0f6fc;
-            margin: 0;
-            line-height: 1.2;
+          @media (max-width: 600px) {
+            body { padding: 32px 17px; }
+            .dashboard-header { margin-bottom: 21px; }
+            .live-badge { gap: 7px; padding: 8px 10px; font-size: 11px; }
+            .status-card { min-height: 112px; padding: 21px 19px; border-radius: 17px; }
+            .status-icon { width: 48px; height: 48px; border-radius: 15px; }
+            .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+            .stat-card { padding: 16px; border-radius: 14px; }
+            .stat-card:last-child { grid-column: 1 / -1; }
+            .controls { gap: 9px; }
+            .btn-primary { min-height: 51px; border-radius: 12px; font-size: 13px; }
           }
-          header p {
-            font-size: 14px;
-            color: #8b949e;
-            margin: 6px 0 0;
-            line-height: 1.5;
+          @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
           }
-
-          .status-section {
-            border-radius: 12px;
-            padding: 20px 24px;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            transition: background 0.3s, border-color 0.3s;
-          }
-          .status-section.online  { background: #0d2218; border: 2px solid #238636; }
-          .status-section.offline { background: #200d0d; border: 2px solid #da3633; }
-
-          .status-icon {
-            width: 44px; height: 44px;
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 20px; flex-shrink: 0;
-            transition: background 0.3s;
-          }
-          .status-icon.online  { background: #238636; }
-          .status-icon.offline { background: #da3633; }
-
-          .status-label { font-size: 18px; font-weight: 700; line-height: 1.2; transition: color 0.3s; }
-          .status-label.online  { color: #3fb950; }
-          .status-label.offline { color: #f85149; }
-          .status-detail { font-size: 13px; color: #8b949e; margin-top: 3px; }
-
-          dl { margin: 0; }
-          .stat-card {
-            background: #161b22;
-            border: 1px solid #21262d;
-            border-radius: 10px;
-            padding: 16px 20px;
-            margin-bottom: 10px;
-          }
-          dt { font-size: 12px; color: #8b949e; font-weight: 600; margin-bottom: 4px; }
-          dd { margin: 0; font-size: 17px; font-weight: 600; color: #e6edf3; line-height: 1.3; }
-          .stat-detail { margin: 4px 0 0; font-size: 11px; color: #6e7681; }
-
-          .controls { margin-top: 8px; }
-          .btn-grid { display: grid; gap: 10px; margin-bottom: 10px; }
-          .btn-grid-2 { grid-template-columns: 1fr 1fr; }
-
-          .btn-primary {
-            min-height: 52px; border-radius: 10px;
-            font-size: 15px; font-weight: 700;
-            cursor: pointer; letter-spacing: 0.3px;
-            transition: opacity 0.2s, filter 0.2s;
-            font-family: inherit;
-          }
-          .btn-primary:hover  { filter: brightness(1.1); }
-          .btn-primary:active { opacity: 0.85; }
-          .btn-start { border: 2px solid #238636; background: #0d2218; color: #3fb950; }
-          .btn-stop  { border: 2px solid #da3633; background: #200d0d; color: #f85149; }
-
-          .btn-secondary {
-            min-height: 44px; border-radius: 10px;
-            border: 1px solid #21262d; background: #161b22; color: #8b949e;
-            font-size: 13px; font-weight: 500;
-            text-decoration: none;
-            display: flex; align-items: center; justify-content: center;
-            font-family: inherit; cursor: pointer;
-            transition: background 0.2s, color 0.2s;
-          }
-          .btn-secondary:hover { background: #21262d; color: #c9d1d9; }
-
-          footer { margin-top: 20px; text-align: center; }
-          footer p { font-size: 12px; color: #484f58; margin: 0; }
         </style>
       </head>
       <body>
-        <main role="main" aria-label="AFK Bot Dashboard">
-
-          <header>
-            <h1>AFK Bot Dashboard</h1>
-            <p>Minecraft server bot &middot; Live status</p>
+        <main class="dashboard" aria-label="Bot dashboard">
+          <header class="dashboard-header">
+            <div>
+              <p class="eyebrow">Bot dashboard</p>
+              <h1>${config.name}</h1>
+              <p class="subtitle">Minecraft server · Live connection status</p>
+            </div>
+            <div id="live-badge" class="live-badge offline" aria-live="polite">Offline</div>
           </header>
 
-          <section
-            id="status-section"
-            role="status"
-            aria-live="polite"
-            aria-label="Bot connection status"
-            class="status-section offline"
-          >
-            <div id="status-icon" aria-hidden="true" class="status-icon offline">&#x2717;</div>
+          <section id="status-section" class="status-card offline" aria-label="Bot connection status">
+            <div id="status-icon" class="status-icon offline" aria-hidden="true">—</div>
             <div>
-              <div id="status-label" class="status-label offline">Connecting…</div>
-              <div id="status-detail" class="status-detail">Establishing connection</div>
+              <h2 id="status-label" class="status-label">Connecting…</h2>
+              <p id="status-detail" class="status-detail">Checking the bot connection</p>
             </div>
           </section>
 
-          <section aria-label="Bot statistics">
-            <dl>
-              <div class="stat-card">
-                <dt>Uptime</dt>
-                <dd id="uptime-text">—</dd>
-                <p class="stat-detail">Time since last connection</p>
-              </div>
-              <div class="stat-card">
-                <dt>Coordinates</dt>
-                <dd id="coords-text">Searching…</dd>
-                <p class="stat-detail">Bot's current in-game position</p>
-              </div>
-              <div class="stat-card">
-                <dt>Server address</dt>
-                <dd>${config.server.ip}</dd>
-                <p class="stat-detail">Minecraft server hostname</p>
-              </div>
-            </dl>
+          <section class="stats-grid" aria-label="Bot details">
+            <article class="stat-card">
+              <p class="stat-label">Uptime</p>
+              <p id="uptime-text" class="stat-value" aria-live="polite">—</p>
+              <p class="stat-detail">Time since this bot process started</p>
+            </article>
+            <article class="stat-card">
+              <p class="stat-label">Coordinates</p>
+              <p id="coords-text" class="stat-value" aria-live="polite">Waiting for spawn</p>
+              <p class="stat-detail">Current in-game position</p>
+            </article>
+            <article class="stat-card">
+              <p class="stat-label">Server</p>
+              <p class="stat-value">${config.server.ip}</p>
+              <p class="stat-detail">Minecraft server address</p>
+            </article>
           </section>
 
           <section class="controls" aria-label="Bot controls">
-            <div class="btn-grid btn-grid-2">
-              <button class="btn-primary btn-start" onclick="startBot()" aria-label="Start bot">Start bot</button>
-              <button class="btn-primary btn-stop" onclick="stopBot()" aria-label="Stop bot">Stop bot</button>
-            </div>
-            <div class="btn-grid btn-grid-2">
-              <a href="/tutorial" class="btn-secondary" aria-label="View setup guide">Setup guide</a>
-              <a href="/logs" class="btn-secondary" aria-label="View bot logs">View logs</a>
-            </div>
+            <button id="start-button" class="btn-primary btn-start" onclick="controlBot('start')" aria-label="Start bot">Start bot</button>
+            <button id="stop-button" class="btn-primary btn-stop" onclick="controlBot('stop')" aria-label="Stop bot">Stop bot</button>
+            <p id="action-feedback" class="action-feedback" role="status" aria-live="polite"></p>
           </section>
 
-          <footer>
-            <p>Status updates every 5 seconds</p>
+          <footer class="page-footer">
+            <a href="/tutorial" class="text-link">Setup guide</a>
+            <a href="/logs" class="text-link">View logs</a>
           </footer>
-
+          <p class="refresh-note">Status refreshes automatically every 5 seconds</p>
         </main>
 
         <script>
@@ -211,6 +259,7 @@ app.get('/', (req, res) => {
           async function update() {
             try {
               const r = await fetch('/health');
+              if (!r.ok) throw new Error('Status request failed');
               const data = await r.json();
               const online = data.status === 'connected';
 
@@ -218,13 +267,15 @@ app.get('/', (req, res) => {
               const icon    = document.getElementById('status-icon');
               const label   = document.getElementById('status-label');
               const detail  = document.getElementById('status-detail');
+              const badge   = document.getElementById('live-badge');
 
-              section.className = 'status-section ' + (online ? 'online' : 'offline');
+              section.className = 'status-card ' + (online ? 'online' : 'offline');
               icon.className    = 'status-icon '    + (online ? 'online' : 'offline');
               icon.textContent  = online ? '✓' : '✗';
-              label.className   = 'status-label '   + (online ? 'online' : 'offline');
-              label.textContent = online ? 'Connected' : 'Disconnected';
-              detail.textContent = online ? 'Bot is active on the server' : 'Attempting to reconnect';
+              label.textContent = online ? 'Bot is online' : 'Bot is offline';
+              detail.textContent = online ? 'Connected and active on the server' : 'Not currently connected to the server';
+              badge.className = 'live-badge ' + (online ? 'online' : 'offline');
+              badge.textContent = online ? 'Online' : 'Offline';
 
               document.getElementById('uptime-text').textContent = formatUptime(data.uptime);
 
@@ -232,29 +283,45 @@ app.get('/', (req, res) => {
                 const x = Math.floor(data.coords.x);
                 const y = Math.floor(data.coords.y);
                 const z = Math.floor(data.coords.z);
-                document.getElementById('coords-text').textContent = 'X ' + x + ', Y ' + y + ', Z ' + z;
+                document.getElementById('coords-text').textContent = 'X ' + x + ' · Y ' + y + ' · Z ' + z;
               } else {
-                document.getElementById('coords-text').textContent = 'Searching…';
+                document.getElementById('coords-text').textContent = 'Waiting for spawn';
               }
             } catch (e) {
               const label = document.getElementById('status-label');
-              label.className = 'status-label offline';
-              label.textContent = 'Unreachable';
+              label.textContent = 'Status unavailable';
+              document.getElementById('status-detail').textContent = 'Could not reach the bot status service';
+              document.getElementById('status-section').className = 'status-card offline';
+              document.getElementById('status-icon').className = 'status-icon offline';
+              document.getElementById('status-icon').textContent = '!';
+              document.getElementById('live-badge').className = 'live-badge offline';
+              document.getElementById('live-badge').textContent = 'Unavailable';
             }
           }
 
-          async function startBot() {
-            const r = await fetch('/start', { method: 'POST' });
-            const data = await r.json();
-            alert(data.success ? 'Bot started!' : data.msg);
-            update();
-          }
-
-          async function stopBot() {
-            const r = await fetch('/stop', { method: 'POST' });
-            const data = await r.json();
-            alert(data.success ? 'Bot stopped!' : data.msg);
-            update();
+          async function controlBot(action) {
+            const buttons = [
+              document.getElementById('start-button'),
+              document.getElementById('stop-button')
+            ];
+            const feedback = document.getElementById('action-feedback');
+            buttons.forEach((button) => { button.disabled = true; });
+            feedback.className = 'action-feedback';
+            feedback.textContent = action === 'start' ? 'Sending start request…' : 'Sending stop request…';
+            try {
+              const r = await fetch('/' + action, { method: 'POST' });
+              const data = await r.json();
+              if (!r.ok || !data.success) throw new Error(data.msg || 'Request failed');
+              feedback.textContent = action === 'start'
+                ? 'Start requested. Waiting for the bot to connect…'
+                : 'Bot stopped.';
+              await update();
+            } catch (error) {
+              feedback.className = 'action-feedback error';
+              feedback.textContent = error.message || 'Could not send the request.';
+            } finally {
+              buttons.forEach((button) => { button.disabled = false; });
+            }
           }
 
           setInterval(update, 5000);
