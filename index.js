@@ -294,17 +294,22 @@ app.post("/send-command", (req, res) => {
 // ============================================================
 // MINEFLAYER BOT LOGIC
 // ============================================================
+// ============================================================
+// MINEFLAYER BOT LOGIC
+// ============================================================
+let sessionTimeout = null;
+
 function initBot() {
   if (bot) return;
 
-  addLog(`Attempting connection to ${config.server.ip}:${config.server.port}...`);
+  addLog(`Connecting to ${config.server.ip}:${config.server.port}...`);
 
   bot = mineflayer.createBot({
     host: config.server.ip,
     port: config.server.port,
     username: config["bot-account"].username,
-    connectTimeout: 10000,          // Times out in 10s if server is offline (prevents hanging)
-    physicsEnabled: false,          // Keeps RAM usage ultra-low
+    connectTimeout: 10000,
+    physicsEnabled: false,
     viewDistance: "tiny",
     checkTimeoutInterval: 60 * 1000,
     plugins: {
@@ -315,15 +320,31 @@ function initBot() {
 
   bot.on("spawn", () => {
     botState.connected = true;
-    addLog(`[SUCCESS] ${config["bot-account"].username} joined Aternos successfully!`);
+    addLog(`[SUCCESS] ${config["bot-account"].username} joined server!`);
 
-    // Anti-AFK: Swing arm every 30 seconds to prevent Aternos idle kicks
+    // Anti-AFK loop (swings arm every 20 seconds)
     clearInterval(chatInterval);
     chatInterval = setInterval(() => {
       if (bot && botState.connected) {
         bot.swingArm("right");
       }
-    }, 30000);
+    }, 20000);
+
+    // Auto-disconnect after 2 hours (7,200,000 ms) to trigger an immediate rejoin
+    clearTimeout(sessionTimeout);
+    sessionTimeout = setTimeout(() => {
+      addLog("[SESSION] 2-hour session limit reached. Disconnecting to rejoin immediately...");
+      if (bot) bot.quit();
+    }, 2 * 60 * 60 * 1000);
+  });
+
+  bot.on("death", () => {
+    addLog("[GAME] Bot died, auto-respawning...");
+    bot.respawn();
+  });
+
+  bot.on("kicked", (reason) => {
+    cleanupAndReconnect(`Kicked (${reason})`);
   });
 
   bot.on("end", (reason) => {
@@ -331,23 +352,26 @@ function initBot() {
   });
 
   bot.on("error", (err) => {
-    cleanupAndReconnect(`Connection error (${err.message})`);
+    addLog(`[ERROR] ${err.message}`);
   });
 }
 
 function cleanupAndReconnect(logMsg) {
   botState.connected = false;
   clearInterval(chatInterval);
+  clearTimeout(sessionTimeout);
+
   if (bot) {
     bot.removeAllListeners();
     bot = null;
   }
-  addLog(`[RETRY] ${logMsg}. Retrying in 5 seconds...`);
 
-  // Fast 5-second retry loop to catch Aternos the moment it finishes loading
+  addLog(`[RECONNECT] ${logMsg}. Rejoining in 1 second...`);
+
+  // Immediate 1-second reconnect loop
   setTimeout(() => {
     if (!botState.connected) initBot();
-  }, 5000);
+  }, 1000);
 }
 
 // Start Server & Bot
