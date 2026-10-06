@@ -1,39 +1,38 @@
 {
-  "name": "AFK Bot",
+  "name": "Sinner",
   "bot-account": {
-    "username": "Slobot00",
+    "username": "SINNER",
     "password": "",
     "type": "offline"
   },
   "server": {
-    "ip": "slobtest1.aternos.me",
-    "port": 27586,
+    "ip": "advancedland.aternos.me",
+    "port":  16140,
     "version": "",
     "try-creative": false
   },
   "position": {
-    "enabled": true,
+    "enabled": false,
     "x": 0,
-    "y": 100,
+    "y": 351,
     "z": 0
   },
   "utils": {
     "auto-auth": {
-      "enabled": true,
+      "enabled": false,
       "password": "chalol78"
     },
     "anti-afk": {
-      "enabled": true,
+      "enabled": false,
       "sneak": true
     },
     "chat-messages": {
-      "enabled": true,
+      "enabled": true
+      ,
       "repeat": true,
-      "repeat-delay": 120,
+      "repeat-delay": 7200,
       "messages": [
-        "I'm a regular player",
-        "Subscribe to Slobos!",
-        "I like to play Minecraft!"
+        "RUN"
       ]
     },
     "chat-log": true,
@@ -42,31 +41,31 @@
     "max-reconnect-delay": 120000
   },
   "movement": {
-    "enabled": true,
+    "enabled": false,
     "circle-walk": {
-      "enabled": true,
+      "enabled": false,
       "radius": 4,
       "speed": 3000
     },
     "look-around": {
-      "enabled": true,
+      "enabled": false,
       "interval": 5000
     },
     "random-jump": {
-      "enabled": true,
+      "enabled": false,
       "interval": 10000
     }
   },
   "modules": {
-    "avoidMobs": true,
-    "combat": true,
+    "avoidMobs": false,
+    "combat": false,
     "beds": false,
-    "chat": true,
-    "console-commands": true
+    "chat": false,
+    "console-commands": false
   },
   "combat": {
-    "attack-mobs": true,
-    "auto-eat": true
+    "attack-mobs": false,
+    "auto-eat": false
   },
   "beds": {
     "pick-up-day": false,
@@ -82,6 +81,6 @@
     }
   },
   "chat": {
-    "respond": true
+    "respond": false
   }
 }
