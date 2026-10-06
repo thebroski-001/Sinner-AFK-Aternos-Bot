@@ -297,58 +297,57 @@ app.post("/send-command", (req, res) => {
 function initBot() {
   if (bot) return;
 
-  addLog(`Connecting to ${config.server.ip}:${config.server.port}...`);
+  addLog(`Attempting connection to ${config.server.ip}:${config.server.port}...`);
 
   bot = mineflayer.createBot({
     host: config.server.ip,
     port: config.server.port,
     username: config["bot-account"].username,
-    physicsEnabled: false,          // Saves RAM & prevents movement lag
-    viewDistance: "tiny",            // Prevents downloading chunk data
-    checkTimeoutInterval: 120 * 1000, // 2-min buffer stops join/leave kick loops
+    connectTimeout: 10000,          // Times out in 10s if server is offline (prevents hanging)
+    physicsEnabled: false,          // Keeps RAM usage ultra-low
+    viewDistance: "tiny",
+    checkTimeoutInterval: 60 * 1000,
     plugins: {
-      time: false,                  // Disables time-tracking bloat
-      health: false                 // Disables health-tracking bloat
+      time: false,
+      health: false
     }
   });
 
   bot.on("spawn", () => {
     botState.connected = true;
-    addLog(`[SUCCESS] ${config["bot-account"].username} spawned on server.`);
+    addLog(`[SUCCESS] ${config["bot-account"].username} joined Aternos successfully!`);
 
-    // Handle repeating "RUN" message
-    if (config.utils["chat-messages"] && config.utils["chat-messages"].enabled) {
-      clearInterval(chatInterval);
-      const delay = (config.utils["chat-messages"]["repeat-delay"] || 7200) * 1000;
-      const msgs = config.utils["chat-messages"].messages || ["RUN"];
-
-      chatInterval = setInterval(() => {
-        if (bot && botState.connected) {
-          const msg = msgs[Math.floor(Math.random() * msgs.length)];
-          bot.chat(msg);
-          addLog(`[CHAT] Sent: ${msg}`);
-        }
-      }, delay);
-    }
+    // Anti-AFK: Swing arm every 30 seconds to prevent Aternos idle kicks
+    clearInterval(chatInterval);
+    chatInterval = setInterval(() => {
+      if (bot && botState.connected) {
+        bot.swingArm("right");
+      }
+    }, 30000);
   });
 
   bot.on("end", (reason) => {
-    botState.connected = false;
-    clearInterval(chatInterval);
-    bot = null;
-    addLog(`[DISCONNECT] Reason: ${reason}`);
-
-    if (config.utils["auto-reconnect"]) {
-      const delay = config.utils["auto-reconnect-delay"] || 10000;
-      addLog(`Reconnecting in ${delay / 1000}s...`);
-      setTimeout(() => {
-        if (!botState.connected) initBot();
-      }, delay);
-    }
+    cleanupAndReconnect(`Disconnected (${reason})`);
   });
 
-  bot.on("kicked", (reason) => addLog(`[KICKED] ${reason}`));
-  bot.on("error", (err) => addLog(`[ERROR] ${err.message}`));
+  bot.on("error", (err) => {
+    cleanupAndReconnect(`Connection error (${err.message})`);
+  });
+}
+
+function cleanupAndReconnect(logMsg) {
+  botState.connected = false;
+  clearInterval(chatInterval);
+  if (bot) {
+    bot.removeAllListeners();
+    bot = null;
+  }
+  addLog(`[RETRY] ${logMsg}. Retrying in 5 seconds...`);
+
+  // Fast 5-second retry loop to catch Aternos the moment it finishes loading
+  setTimeout(() => {
+    if (!botState.connected) initBot();
+  }, 5000);
 }
 
 // Start Server & Bot
