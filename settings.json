@@ -35,9 +35,9 @@
         "RUN"
       ]
     },
-    "chat-log": true,
+    "chat-log": flase,
     "auto-reconnect": true,
-    "auto-reconnect-delay": 2000,
+    "auto-reconnect-delay": 15000,
     "max-reconnect-delay": 120000
   },
   "movement": {
